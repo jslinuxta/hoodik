@@ -21,8 +21,11 @@ pub(crate) async fn logout(
     let mut response = HttpResponse::NoContent();
 
     let (jwt, refresh) = auth.manage_cookies(&authenticated, "logout")?;
-    response.cookie(jwt);
-    response.cookie(refresh);
+
+    if !context.config.auth.use_headers_for_auth {
+        response.cookie(jwt);
+        response.cookie(refresh);
+    }
 
     Ok(response.finish())
 }

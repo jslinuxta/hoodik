@@ -28,9 +28,15 @@ pub(crate) async fn refresh(req: HttpRequest) -> AppResult<HttpResponse> {
     let authenticated = auth.refresh(&authenticated.session).await?;
 
     let (jwt, refresh) = auth.manage_cookies(&authenticated, module_path!())?;
+    let mut response = HttpResponse::Ok();
 
-    Ok(HttpResponse::Ok()
-        .cookie(jwt)
-        .cookie(refresh)
-        .json(authenticated))
+    if !context.config.auth.use_headers_for_auth {
+        response.cookie(jwt);
+        response.cookie(refresh);
+    } else {
+        response.append_header(("x-auth-jwt".to_string(), jwt.value()));
+        response.append_header(("x-auth-refresh".to_string(), refresh.value()));
+    }
+
+    Ok(response.json(authenticated))
 }
